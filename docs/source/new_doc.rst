@@ -1,7 +1,1193 @@
-Management SoC Registers
-========================
+.. raw:: html
 
-CTRL
+   <!---
+   # SPDX-FileCopyrightText: 2020 Efabless Corporation
+   #
+   # Licensed under the Apache License, Version 2.0 (the "License");
+   # you may not use this file except in compliance with the License.
+   # You may obtain a copy of the License at
+   #
+   #      http://www.apache.org/licenses/LICENSE-2.0
+   #
+   # Unless required by applicable law or agreed to in writing, software
+   # distributed under the License is distributed on an "AS IS" BASIS,
+   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   # See the License for the specific language governing permissions and
+   # limitations under the License.
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   -->
+==============================
+Caravel Management SoC - Litex
+==============================
+
+|License| |User CI| |Caravel Build|
+
+.. contents:: Table of Contents
+    :local:
+    :depth: 2
+
+Overview
+========
+
+This repository contains an implementation of the management area for
+`Caravel <https://github.com/efabless/caravel.git>`__.
+The management area is SoC generated using Litex containing a VexRiscv core with memory, a flash controller and serial peripherals.
+
+.. image:: _static/block_diagram.png
+    :width: 100%
+    :alt: Caravel Management Area Block Diagram
+
+Features
+=============
+
+* VexRiscv core with debug port
+* 2 kB SRAM plus 1 kB of DFFRAM
+* XIP SPI Flash controller
+* UART, SPI and GPIO ports
+* 128 port logic analyzer
+* Counter / timer
+* 32-bit Wishbone bus extending to the user project area
+* 6 user interrupts
+
+Processor
+=========
+
+The processor core is based on a VexRiscv minimal+debug configuration.  The core has been configured with 64 bytes of instruction cache.
+The core has not been configured with compress or multiply instructions.
+
+Flash Controller
+================
+
+Description
+-----------
+
+The flash controller supports single mode SPI to a compatible W25Q128JV Flash device.  The configuration supports
+execute-in-place and the CPU reset vector is configured for the beginning of the Flash memory region.
+
+Interrupts (IRQ)
+================
+
+Description
+-----------
+
+The processor is configured with interrupts for the Uart and Timer devices.  It also supports 6 user IRQS extended
+to the user project.
+
+The corresponding register must be set to enable interrupts from the respective device.  The following registers are
+applicable:
+
+* reg_timer0_irq_en
+* reg_timer0_irq_en
+* reg_timer0_irq_en
+
+.. include:: generated/interrupts.rst
+    :start-after: Interrupt
+
+
+UART
+====
+
+Description
+-----------
+The UART provide general serial communication with the management SoC.  The baud rate is configured at 9600.
+
+The ``reg_uart_enable`` must be set in order to run (disabled by default).
+
+``reg_uart_enable`` can be used to read and write data to the port.
+
+.. include:: generated/uart.rst
+    :start-after: UART
+
+SPI Controller
+==============
+
+Description
+-----------
+The SPI controller is operated through the ``reg_spimaster_control`` and ``reg_spimaster_status'' registers.
+
+``reg_spimaster_rdata`` and ``reg_spimaster_wdata`` are used to read abd write data through to the port.
+
+.. include:: generated/spi_master.rst
+    :start-after: SPI_MASTER
+
+GPIO
+====
+.. include:: generated/gpio.rst
+    :start-after: GPIO
+
+Description
+-----------
+A single GPIO port is provided from the Management SoC as general indicator and diagnostic for programming or as a means
+to control functionality off chip.
+
+One example user case is to set an enable for an off-chip LDO enabling a controlled power-up sequence for the user project.
+
+Debug
+=====
+
+Description
+-----------
+Debug support is enabled in the core and can be accessed through a dedicated UART port configured as a wishbone master.
+The baud rate for the port is 9600.
+
+See the following reference for more information <https://github.com/SpinalHDL/VexRiscv#debugplugin>.
+
+Counter / Timer
+===============
+
+Description
+-----------
+.. include:: generated/timer0.rst
+    :start-after: Timer
+
+Logic Analyzer
+==============
+
+Description
+-----------
+The logic analyzer function provides a flexible means to monitor signals from the user project wrapper or drive them
+from the management core.
+
+The logic analyzer supports 128 signals mapped to separated GPIO in, out and oeb ports.
+
+.. include:: generated/la.rst
+    :start-after: LA
+
+Memory Regions
+==============
+
++---------------------+----------------------------+--------------------------+
+| Region              | Address                    | Size                     |
++=====================+============================+==========================+
+| dff                 | 0x00000000                 | 0x00000400               |
++---------------------+----------------------------+--------------------------+
+| sram                | 0x01000000                 | 0x00000800               |
++---------------------+----------------------------+--------------------------+
+| flash               | 0x10000000                 | 0x01000000               |
++---------------------+----------------------------+--------------------------+
+| hk                  | 0x26000000                 | 0x00100000               |
++---------------------+----------------------------+--------------------------+
+| user project        | 0x30000000                 | 0x10000000               |
++---------------------+----------------------------+--------------------------+
+| csr                 | 0xf0000000                 | 0x00010000               |
++---------------------+----------------------------+--------------------------+
+| vexriscv_debug      | 0xf00f0000                 | 0x00000100               |
++---------------------+----------------------------+--------------------------+
+
+
+Other Registers
+===============
+
+    ctrl
+    debug_mode
+    debug_oeb
+    flash_core
+    flash_phy
+    gpio
+    la
+    mprj_wb_iena
+    spi_enabled
+    spi_master
+    timer0
+    uart
+    uart_enabled
+    user_irq_0
+    user_irq_1
+    user_irq_2
+    user_irq_3
+    user_irq_4
+    user_irq_5
+    user_irq_ena
+
+   
+.. |License| image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+   :target: https://opensource.org/licenses/Apache-2.0
+.. |User CI| image:: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml/badge.svg
+   :target: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml
+.. |Caravel Build| image:: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.yml/badge.svg
+   :target: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.ymlCTRL
+----
+
+Register Listing for CTRL
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
++------------------------------------------+-------------------------------------+
+| Register                                 | Address                             |
++==========================================+=====================================+
+| :ref:`CTRL_RESET <CTRL_RESET>`           | :ref:`0xf0000000 <CTRL_RESET>`      |
++------------------------------------------+-------------------------------------+
+| :ref:`CTRL_SCRATCH <CTRL_SCRATCH>`       | :ref:`0xf0000004 <CTRL_SCRATCH>`    |
++------------------------------------------+-------------------------------------+
+| :ref:`CTRL_BUS_ERRORS <CTRL_BUS_ERRORS>` | :ref:`0xf0000008 <CTRL_BUS_ERRORS>` |
++------------------------------------------+-------------------------------------+
+
+CTRL_RESET
+..........
+
+`Address: 0xf0000000 + 0x0 = 0xf0000000`
+
+
+    .. wavedrom::
+        :caption: CTRL_RESET
+
+        {
+            "reg": [
+                {"name": "soc_rst",  "type": 4, "bits": 1},
+                {"name": "cpu_rst",  "bits": 1},
+                {"bits": 30}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
++-------+---------+------------------------------------------------------------------------+
+| Field | Name    | Description                                                            |
++=======+=========+========================================================================+
+| [0]   | SOC_RST | Write `1` to this register to reset the full SoC (Pulse Reset)         |
++-------+---------+------------------------------------------------------------------------+
+| [1]   | CPU_RST | Write `1` to this register to reset the CPU(s) of the SoC (Hold Reset) |
++-------+---------+------------------------------------------------------------------------+
+
+CTRL_SCRATCH
+............
+
+`Address: 0xf0000000 + 0x4 = 0xf0000004`
+
+    Use this register as a scratch space to verify that software read/write accesses
+    to the Wishbone/CSR bus are working correctly. The initial reset value of
+    0x1234578 can be used to verify endianness.
+
+    .. wavedrom::
+        :caption: CTRL_SCRATCH
+
+        {
+            "reg": [
+                {"name": "scratch[31:0]", "attr": 'reset: 305419896', "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+CTRL_BUS_ERRORS
+...............
+
+`Address: 0xf0000000 + 0x8 = 0xf0000008`
+
+    Total number of Wishbone bus errors (timeouts) since start.
+
+    .. wavedrom::
+        :caption: CTRL_BUS_ERRORS
+
+        {
+            "reg": [
+                {"name": "bus_errors[31:0]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+DEBUG_MODE
+----------
+
+Register Listing for DEBUG_MODE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
++----------------------------------------+------------------------------------+
+| Register                               | Address                            |
++========================================+====================================+
+| :ref:`DEBUG_MODE_OUT <DEBUG_MODE_OUT>` | :ref:`0xf0000800 <DEBUG_MODE_OUT>` |
++----------------------------------------+------------------------------------+
+
+DEBUG_MODE_OUT
+..............
+
+`Address: 0xf0000800 + 0x0 = 0xf0000800`
+
+    GPIO Output(s) Control.
+
+    .. wavedrom::
+        :caption: DEBUG_MODE_OUT
+
+        {
+            "reg": [
+                {"name": "out", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+DEBUG_OEB
+---------
+
+Register Listing for DEBUG_OEB
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
++--------------------------------------+-----------------------------------+
+| Register                             | Address                           |
++======================================+===================================+
+| :ref:`DEBUG_OEB_OUT <DEBUG_OEB_OUT>` | :ref:`0xf0001000 <DEBUG_OEB_OUT>` |
++--------------------------------------+-----------------------------------+
+
+DEBUG_OEB_OUT
+.............
+
+`Address: 0xf0001000 + 0x0 = 0xf0001000`
+
+    GPIO Output(s) Control.
+
+    .. wavedrom::
+        :caption: DEBUG_OEB_OUT
+
+        {
+            "reg": [
+                {"name": "out", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+FLASH_CORE
+----------
+
+Register Listing for FLASH_CORE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
++------------------------------------------------------------------+-------------------------------------------------+
+| Register                                                         | Address                                         |
++==================================================================+=================================================+
+| :ref:`FLASH_CORE_MMAP_DUMMY_BITS <FLASH_CORE_MMAP_DUMMY_BITS>`   | :ref:`0xf0001800 <FLASH_CORE_MMAP_DUMMY_BITS>`  |
++------------------------------------------------------------------+-------------------------------------------------+
+| :ref:`FLASH_CORE_MASTER_CS <FLASH_CORE_MASTER_CS>`               | :ref:`0xf0001804 <FLASH_CORE_MASTER_CS>`        |
++------------------------------------------------------------------+-------------------------------------------------+
+| :ref:`FLASH_CORE_MASTER_PHYCONFIG <FLASH_CORE_MASTER_PHYCONFIG>` | :ref:`0xf0001808 <FLASH_CORE_MASTER_PHYCONFIG>` |
++------------------------------------------------------------------+-------------------------------------------------+
+| :ref:`FLASH_CORE_MASTER_RXTX <FLASH_CORE_MASTER_RXTX>`           | :ref:`0xf000180c <FLASH_CORE_MASTER_RXTX>`      |
++------------------------------------------------------------------+-------------------------------------------------+
+| :ref:`FLASH_CORE_MASTER_STATUS <FLASH_CORE_MASTER_STATUS>`       | :ref:`0xf0001810 <FLASH_CORE_MASTER_STATUS>`    |
++------------------------------------------------------------------+-------------------------------------------------+
+
+FLASH_CORE_MMAP_DUMMY_BITS
+..........................
+
+`Address: 0xf0001800 + 0x0 = 0xf0001800`
+
+
+    .. wavedrom::
+        :caption: FLASH_CORE_MMAP_DUMMY_BITS
+
+        {
+            "reg": [
+                {"name": "mmap_dummy_bits[7:0]", "bits": 8},
+                {"bits": 24},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+FLASH_CORE_MASTER_CS
+....................
+
+`Address: 0xf0001800 + 0x4 = 0xf0001804`
+
+
+    .. wavedrom::
+        :caption: FLASH_CORE_MASTER_CS
+
+        {
+            "reg": [
+                {"name": "master_cs", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+FLASH_CORE_MASTER_PHYCONFIG
+...........................
+
+`Address: 0xf0001800 + 0x8 = 0xf0001808`
+
+    SPI PHY settings.
+
+    .. wavedrom::
+        :caption: FLASH_CORE_MASTER_PHYCONFIG
+
+        {
+            "reg": [
+                {"name": "len",  "bits": 8},
+                {"name": "width",  "bits": 4},
+                {"bits": 4},
+                {"name": "mask",  "bits": 8},
+                {"bits": 8}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
++---------+-------+-----------------------------------------------------------------------------+
+| Field   | Name  | Description                                                                 |
++=========+=======+=============================================================================+
+| [7:0]   | LEN   | SPI Xfer length (in bits).                                                  |
++---------+-------+-----------------------------------------------------------------------------+
+| [11:8]  | WIDTH | SPI Xfer width (1/2/4/8).                                                   |
++---------+-------+-----------------------------------------------------------------------------+
+| [23:16] | MASK  | SPI DQ output enable mask (set bits to ``1`` to enable output drivers on DQ |
+|         |       | lines).                                                                     |
++---------+-------+-----------------------------------------------------------------------------+
+
+FLASH_CORE_MASTER_RXTX
+......................
+
+`Address: 0xf0001800 + 0xc = 0xf000180c`
+
+
+    .. wavedrom::
+        :caption: FLASH_CORE_MASTER_RXTX
+
+        {
+            "reg": [
+                {"name": "master_rxtx[31:0]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+FLASH_CORE_MASTER_STATUS
+........................
+
+`Address: 0xf0001800 + 0x10 = 0xf0001810`
+
+
+    .. wavedrom::
+        :caption: FLASH_CORE_MASTER_STATUS
+
+        {
+            "reg": [
+                {"name": "tx_ready",  "bits": 1},
+                {"name": "rx_ready",  "bits": 1},
+                {"bits": 30}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
++-------+----------+-----------------------+
+| Field | Name     | Description           |
++=======+==========+=======================+
+| [0]   | TX_READY | TX FIFO is not full.  |
++-------+----------+-----------------------+
+| [1]   | RX_READY | RX FIFO is not empty. |
++-------+----------+-----------------------+
+
+FLASH_PHY
+---------
+
+Register Listing for FLASH_PHY
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
++------------------------------------------------------+-------------------------------------------+
+| Register                                             | Address                                   |
++======================================================+===========================================+
+| :ref:`FLASH_PHY_CLK_DIVISOR <FLASH_PHY_CLK_DIVISOR>` | :ref:`0xf0002000 <FLASH_PHY_CLK_DIVISOR>` |
++------------------------------------------------------+-------------------------------------------+
+
+FLASH_PHY_CLK_DIVISOR
+.....................
+
+`Address: 0xf0002000 + 0x0 = 0xf0002000`
+
+
+    .. wavedrom::
+        :caption: FLASH_PHY_CLK_DIVISOR
+
+        {
+            "reg": [
+                {"name": "clk_divisor[7:0]", "attr": 'reset: 1', "bits": 8},
+                {"bits": 24},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+GPIO
+----
+
+Register Listing for GPIO
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
++--------------------------------+--------------------------------+
+| Register                       | Address                        |
++================================+================================+
+| :ref:`GPIO_MODE1 <GPIO_MODE1>` | :ref:`0xf0002800 <GPIO_MODE1>` |
++--------------------------------+--------------------------------+
+| :ref:`GPIO_MODE0 <GPIO_MODE0>` | :ref:`0xf0002804 <GPIO_MODE0>` |
++--------------------------------+--------------------------------+
+| :ref:`GPIO_IEN <GPIO_IEN>`     | :ref:`0xf0002808 <GPIO_IEN>`   |
++--------------------------------+--------------------------------+
+| :ref:`GPIO_OE <GPIO_OE>`       | :ref:`0xf000280c <GPIO_OE>`    |
++--------------------------------+--------------------------------+
+| :ref:`GPIO_IN <GPIO_IN>`       | :ref:`0xf0002810 <GPIO_IN>`    |
++--------------------------------+--------------------------------+
+| :ref:`GPIO_OUT <GPIO_OUT>`     | :ref:`0xf0002814 <GPIO_OUT>`   |
++--------------------------------+--------------------------------+
+
+GPIO_MODE1
+..........
+
+`Address: 0xf0002800 + 0x0 = 0xf0002800`
+
+    GPIO Tristate(s) Control.
+
+    .. wavedrom::
+        :caption: GPIO_MODE1
+
+        {
+            "reg": [
+                {"name": "mode1", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+GPIO_MODE0
+..........
+
+`Address: 0xf0002800 + 0x4 = 0xf0002804`
+
+    GPIO Tristate(s) Control.
+
+    .. wavedrom::
+        :caption: GPIO_MODE0
+
+        {
+            "reg": [
+                {"name": "mode0", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+GPIO_IEN
+........
+
+`Address: 0xf0002800 + 0x8 = 0xf0002808`
+
+    GPIO Tristate(s) Control.
+
+    .. wavedrom::
+        :caption: GPIO_IEN
+
+        {
+            "reg": [
+                {"name": "ien", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+GPIO_OE
+.......
+
+`Address: 0xf0002800 + 0xc = 0xf000280c`
+
+    GPIO Tristate(s) Control.
+
+    .. wavedrom::
+        :caption: GPIO_OE
+
+        {
+            "reg": [
+                {"name": "oe", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+GPIO_IN
+.......
+
+`Address: 0xf0002800 + 0x10 = 0xf0002810`
+
+    GPIO Input(s) Status.
+
+    .. wavedrom::
+        :caption: GPIO_IN
+
+        {
+            "reg": [
+                {"name": "in", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+GPIO_OUT
+........
+
+`Address: 0xf0002800 + 0x14 = 0xf0002814`
+
+    GPIO Ouptut(s) Control.
+
+    .. wavedrom::
+        :caption: GPIO_OUT
+
+        {
+            "reg": [
+                {"name": "out", "bits": 1},
+                {"bits": 31},
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 4 }, "options": {"hspace": 400, "bits": 32, "lanes": 4}
+        }
+
+
+Interrupt Controller
+--------------------
+
+This device has an ``EventManager``-based interrupt system.  Individual modules
+generate `events` which are wired into a central interrupt controller.
+
+When an interrupt occurs, you should look the interrupt number up in the CPU-
+specific interrupt table and then call the relevant module.
+
+Assigned Interrupts
+^^^^^^^^^^^^^^^^^^^
+
+The following interrupts are assigned on this system:
+
++-----------+--------------------------------+
+| Interrupt | Module                         |
++===========+================================+
+| 0         | :doc:`TIMER0 <timer0>`         |
++-----------+--------------------------------+
+| 1         | :doc:`UART <uart>`             |
++-----------+--------------------------------+
+| 2         | :doc:`USER_IRQ_0 <user_irq_0>` |
++-----------+--------------------------------+
+| 3         | :doc:`USER_IRQ_1 <user_irq_1>` |
++-----------+--------------------------------+
+| 4         | :doc:`USER_IRQ_2 <user_irq_2>` |
++-----------+--------------------------------+
+| 5         | :doc:`USER_IRQ_3 <user_irq_3>` |
++-----------+--------------------------------+
+| 6         | :doc:`USER_IRQ_4 <user_irq_4>` |
++-----------+--------------------------------+
+| 7         | :doc:`USER_IRQ_5 <user_irq_5>` |
++-----------+--------------------------------+
+
+LA
+--
+
+Register Listing for LA
+^^^^^^^^^^^^^^^^^^^^^^^
+
++--------------------------+-----------------------------+
+| Register                 | Address                     |
++==========================+=============================+
+| :ref:`LA_IEN3 <LA_IEN3>` | :ref:`0xf0003000 <LA_IEN3>` |
++--------------------------+-----------------------------+
+| :ref:`LA_IEN2 <LA_IEN2>` | :ref:`0xf0003004 <LA_IEN2>` |
++--------------------------+-----------------------------+
+| :ref:`LA_IEN1 <LA_IEN1>` | :ref:`0xf0003008 <LA_IEN1>` |
++--------------------------+-----------------------------+
+| :ref:`LA_IEN0 <LA_IEN0>` | :ref:`0xf000300c <LA_IEN0>` |
++--------------------------+-----------------------------+
+| :ref:`LA_OE3 <LA_OE3>`   | :ref:`0xf0003010 <LA_OE3>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_OE2 <LA_OE2>`   | :ref:`0xf0003014 <LA_OE2>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_OE1 <LA_OE1>`   | :ref:`0xf0003018 <LA_OE1>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_OE0 <LA_OE0>`   | :ref:`0xf000301c <LA_OE0>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_IN3 <LA_IN3>`   | :ref:`0xf0003020 <LA_IN3>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_IN2 <LA_IN2>`   | :ref:`0xf0003024 <LA_IN2>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_IN1 <LA_IN1>`   | :ref:`0xf0003028 <LA_IN1>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_IN0 <LA_IN0>`   | :ref:`0xf000302c <LA_IN0>`  |
++--------------------------+-----------------------------+
+| :ref:`LA_OUT3 <LA_OUT3>` | :ref:`0xf0003030 <LA_OUT3>` |
++--------------------------+-----------------------------+
+| :ref:`LA_OUT2 <LA_OUT2>` | :ref:`0xf0003034 <LA_OUT2>` |
++--------------------------+-----------------------------+
+| :ref:`LA_OUT1 <LA_OUT1>` | :ref:`0xf0003038 <LA_OUT1>` |
++--------------------------+-----------------------------+
+| :ref:`LA_OUT0 <LA_OUT0>` | :ref:`0xf000303c <LA_OUT0>` |
++--------------------------+-----------------------------+
+
+LA_IEN3
+.......
+
+`Address: 0xf0003000 + 0x0 = 0xf0003000`
+
+    Bits 96-127 of `LA_IEN`. LA Input Enable
+
+    .. wavedrom::
+        :caption: LA_IEN3
+
+        {
+            "reg": [
+                {"name": "ien[127:96]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_IEN2
+.......
+
+`Address: 0xf0003000 + 0x4 = 0xf0003004`
+
+    Bits 64-95 of `LA_IEN`.
+
+    .. wavedrom::
+        :caption: LA_IEN2
+
+        {
+            "reg": [
+                {"name": "ien[95:64]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_IEN1
+.......
+
+`Address: 0xf0003000 + 0x8 = 0xf0003008`
+
+    Bits 32-63 of `LA_IEN`.
+
+    .. wavedrom::
+        :caption: LA_IEN1
+
+        {
+            "reg": [
+                {"name": "ien[63:32]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_IEN0
+.......
+
+`Address: 0xf0003000 + 0xc = 0xf000300c`
+
+    Bits 0-31 of `LA_IEN`.
+
+    .. wavedrom::
+        :caption: LA_IEN0
+
+        {
+            "reg": [
+                {"name": "ien[31:0]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OE3
+......
+
+`Address: 0xf0003000 + 0x10 = 0xf0003010`
+
+    Bits 96-127 of `LA_OE`. LA Output Enable
+
+    .. wavedrom::
+        :caption: LA_OE3
+
+        {
+            "reg": [
+                {"name": "oe[127:96]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OE2
+......
+
+`Address: 0xf0003000 + 0x14 = 0xf0003014`
+
+    Bits 64-95 of `LA_OE`.
+
+    .. wavedrom::
+        :caption: LA_OE2
+
+        {
+            "reg": [
+                {"name": "oe[95:64]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OE1
+......
+
+`Address: 0xf0003000 + 0x18 = 0xf0003018`
+
+    Bits 32-63 of `LA_OE`.
+
+    .. wavedrom::
+        :caption: LA_OE1
+
+        {
+            "reg": [
+                {"name": "oe[63:32]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OE0
+......
+
+`Address: 0xf0003000 + 0x1c = 0xf000301c`
+
+    Bits 0-31 of `LA_OE`.
+
+    .. wavedrom::
+        :caption: LA_OE0
+
+        {
+            "reg": [
+                {"name": "oe[31:0]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_IN3
+......
+
+`Address: 0xf0003000 + 0x20 = 0xf0003020`
+
+    Bits 96-127 of `LA_IN`. LA Input(s) Status.
+
+    .. wavedrom::
+        :caption: LA_IN3
+
+        {
+            "reg": [
+                {"name": "in[127:96]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_IN2
+......
+
+`Address: 0xf0003000 + 0x24 = 0xf0003024`
+
+    Bits 64-95 of `LA_IN`.
+
+    .. wavedrom::
+        :caption: LA_IN2
+
+        {
+            "reg": [
+                {"name": "in[95:64]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_IN1
+......
+
+`Address: 0xf0003000 + 0x28 = 0xf0003028`
+
+    Bits 32-63 of `LA_IN`.
+
+    .. wavedrom::
+        :caption: LA_IN1
+
+        {
+            "reg": [
+                {"name": "in[63:32]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_IN0
+......
+
+`Address: 0xf0003000 + 0x2c = 0xf000302c`
+
+    Bits 0-31 of `LA_IN`.
+
+    .. wavedrom::
+        :caption: LA_IN0
+
+        {
+            "reg": [
+                {"name": "in[31:0]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OUT3
+.......
+
+`Address: 0xf0003000 + 0x30 = 0xf0003030`
+
+    Bits 96-127 of `LA_OUT`. LA Ouptut(s) Control.
+
+    .. wavedrom::
+        :caption: LA_OUT3
+
+        {
+            "reg": [
+                {"name": "out[127:96]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OUT2
+.......
+
+`Address: 0xf0003000 + 0x34 = 0xf0003034`
+
+    Bits 64-95 of `LA_OUT`.
+
+    .. wavedrom::
+        :caption: LA_OUT2
+
+        {
+            "reg": [
+                {"name": "out[95:64]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OUT1
+.......
+
+`Address: 0xf0003000 + 0x38 = 0xf0003038`
+
+    Bits 32-63 of `LA_OUT`.
+
+    .. wavedrom::
+        :caption: LA_OUT1
+
+        {
+            "reg": [
+                {"name": "out[63:32]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+LA_OUT0
+.......
+
+`Address: 0xf0003000 + 0x3c = 0xf000303c`
+
+    Bits 0-31 of `LA_OUT`.
+
+    .. wavedrom::
+        :caption: LA_OUT0
+
+        {
+            "reg": [
+                {"name": "out[31:0]", "bits": 32}
+            ], "config": {"hspace": 400, "bits": 32, "lanes": 1 }, "options": {"hspace": 400, "bits": 32, "lanes": 1}
+        }
+
+
+.. raw:: html
+
+   <!---
+   # SPDX-FileCopyrightText: 2020 Efabless Corporation
+   #
+   # Licensed under the Apache License, Version 2.0 (the "License");
+   # you may not use this file except in compliance with the License.
+   # You may obtain a copy of the License at
+   #
+   #      http://www.apache.org/licenses/LICENSE-2.0
+   #
+   # Unless required by applicable law or agreed to in writing, software
+   # distributed under the License is distributed on an "AS IS" BASIS,
+   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   # See the License for the specific language governing permissions and
+   # limitations under the License.
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   -->
+==============================
+Caravel Management SoC - Litex
+------------------------------
+
+|License| |User CI| |Caravel Build|
+
+.. contents:: Table of Contents
+    :local:
+    :depth: 2
+
+Overview
+--------
+
+This repository contains an implementation of the management area for
+`Caravel <https://github.com/efabless/caravel.git>`__.
+The management area is SoC generated using Litex containing a VexRiscv core with memory, a flash controller and serial peripherals.
+
+.. image:: _static/block_diagram.png
+    :width: 100%
+    :alt: Caravel Management Area Block Diagram
+
+Features
+-------------
+
+* VexRiscv core with debug port
+* 2 kB SRAM plus 1 kB of DFFRAM
+* XIP SPI Flash controller
+* UART, SPI and GPIO ports
+* 128 port logic analyzer
+* Counter / timer
+* 32-bit Wishbone bus extending to the user project area
+* 6 user interrupts
+
+Processor
+---------
+
+The processor core is based on a VexRiscv minimal+debug configuration.  The core has been configured with 64 bytes of instruction cache.
+The core has not been configured with compress or multiply instructions.
+
+Flash Controller
+----------------
+
+Description
+^^^^^^^^^^^
+
+The flash controller supports single mode SPI to a compatible W25Q128JV Flash device.  The configuration supports
+execute-in-place and the CPU reset vector is configured for the beginning of the Flash memory region.
+
+Interrupts (IRQ)
+----------------
+
+Description
+^^^^^^^^^^^
+
+The processor is configured with interrupts for the Uart and Timer devices.  It also supports 6 user IRQS extended
+to the user project.
+
+The corresponding register must be set to enable interrupts from the respective device.  The following registers are
+applicable:
+
+* reg_timer0_irq_en
+* reg_timer0_irq_en
+* reg_timer0_irq_en
+
+.. include:: generated/interrupts.rst
+    :start-after: Interrupt
+
+
+UART
+----
+
+Description
+-----------
+The UART provide general serial communication with the management SoC.  The baud rate is configured at 9600.
+
+The ``reg_uart_enable`` must be set in order to run (disabled by default).
+
+``reg_uart_enable`` can be used to read and write data to the port.
+
+.. include:: generated/uart.rst
+    :start-after: UART
+
+SPI Controller
+--------------
+
+Description
+-----------
+The SPI controller is operated through the ``reg_spimaster_control`` and ``reg_spimaster_status'' registers.
+
+``reg_spimaster_rdata`` and ``reg_spimaster_wdata`` are used to read abd write data through to the port.
+
+.. include:: generated/spi_master.rst
+    :start-after: SPI_MASTER
+
+GPIO
+====
+.. include:: generated/gpio.rst
+    :start-after: GPIO
+
+Description
+-----------
+A single GPIO port is provided from the Management SoC as general indicator and diagnostic for programming or as a means
+to control functionality off chip.
+
+One example user case is to set an enable for an off-chip LDO enabling a controlled power-up sequence for the user project.
+
+Debug
+-----
+
+Description
+-----------
+Debug support is enabled in the core and can be accessed through a dedicated UART port configured as a wishbone master.
+The baud rate for the port is 9600.
+
+See the following reference for more information <https://github.com/SpinalHDL/VexRiscv#debugplugin>.
+
+Counter / Timer
+---------------
+
+Description
+-----------
+.. include:: generated/timer0.rst
+    :start-after: Timer
+
+Logic Analyzer
+--------------
+
+Description
+-----------
+The logic analyzer function provides a flexible means to monitor signals from the user project wrapper or drive them
+from the management core.
+
+The logic analyzer supports 128 signals mapped to separated GPIO in, out and oeb ports.
+
+.. include:: generated/la.rst
+    :start-after: LA
+
+Memory Regions
+--------------
+
++---------------------+----------------------------+--------------------------+
+| Region              | Address                    | Size                     |
++=====================+============================+==========================+
+| dff                 | 0x00000000                 | 0x00000400               |
++---------------------+----------------------------+--------------------------+
+| sram                | 0x01000000                 | 0x00000800               |
++---------------------+----------------------------+--------------------------+
+| flash               | 0x10000000                 | 0x01000000               |
++---------------------+----------------------------+--------------------------+
+| hk                  | 0x26000000                 | 0x00100000               |
++---------------------+----------------------------+--------------------------+
+| user project        | 0x30000000                 | 0x10000000               |
++---------------------+----------------------------+--------------------------+
+| csr                 | 0xf0000000                 | 0x00010000               |
++---------------------+----------------------------+--------------------------+
+| vexriscv_debug      | 0xf00f0000                 | 0x00000100               |
++---------------------+----------------------------+--------------------------+
+
+
+Other Registers
+---------------
+
+    ctrl
+    debug_mode
+    debug_oeb
+    flash_core
+    flash_phy
+    gpio
+    la
+    mprj_wb_iena
+    spi_enabled
+    spi_master
+    timer0
+    uart
+    uart_enabled
+    user_irq_0
+    user_irq_1
+    user_irq_2
+    user_irq_3
+    user_irq_4
+    user_irq_5
+    user_irq_ena
+
+   
+.. |License| image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+   :target: https://opensource.org/licenses/Apache-2.0
+.. |User CI| image:: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml/badge.svg
+   :target: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml
+.. |Caravel Build| image:: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.yml/badge.svg
+   :target: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.ymlCTRL
 ----
 
 Register Listing for CTRL
