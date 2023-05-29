@@ -20,6 +20,7 @@ Contents
 
    usage
    api
+   new_doc
 
 
 Lumache has its documentation hosted on Read the Docs.
