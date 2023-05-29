@@ -1,3 +1,6 @@
+Management SoC - Litex
+======================
+
 CTRL
 ----
 
