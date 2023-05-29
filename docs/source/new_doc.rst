@@ -179,26 +179,30 @@ Memory Regions
 Other Registers
 ===============
 
-    ctrl
-    debug_mode
-    debug_oeb
-    flash_core
-    flash_phy
-    gpio
-    la
-    mprj_wb_iena
-    spi_enabled
-    spi_master
-    timer0
-    uart
-    uart_enabled
-    user_irq_0
-    user_irq_1
-    user_irq_2
-    user_irq_3
-    user_irq_4
-    user_irq_5
-    user_irq_ena
+.. toctree::
+    :maxdepth: 1
+
+    generated/interrupts
+
+    generated/ctrl
+    generated/debug_mode
+    generated/debug_oeb
+    generated/flash_core
+    generated/flash_phy
+    generated/la
+    generated/mprj_wb_iena
+    generated/spi_enabled
+    generated/uart_enabled
+    generated/user_irq_0
+    generated/user_irq_1
+    generated/user_irq_2
+    generated/user_irq_3
+    generated/user_irq_4
+    generated/user_irq_5
+    generated/user_irq_ena
+
+
+.. include:: references.rst
 
    
 .. |License| image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
@@ -206,7 +210,8 @@ Other Registers
 .. |User CI| image:: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml/badge.svg
    :target: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml
 .. |Caravel Build| image:: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.yml/badge.svg
-   :target: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.ymlCTRL
+   :target: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.yml
+CTRL
 ----
 
 Register Listing for CTRL
@@ -1160,26 +1165,30 @@ Memory Regions
 Other Registers
 ---------------
 
-    ctrl
-    debug_mode
-    debug_oeb
-    flash_core
-    flash_phy
-    gpio
-    la
-    mprj_wb_iena
-    spi_enabled
-    spi_master
-    timer0
-    uart
-    uart_enabled
-    user_irq_0
-    user_irq_1
-    user_irq_2
-    user_irq_3
-    user_irq_4
-    user_irq_5
-    user_irq_ena
+.. toctree::
+    :maxdepth: 1
+
+    generated/interrupts
+
+    generated/ctrl
+    generated/debug_mode
+    generated/debug_oeb
+    generated/flash_core
+    generated/flash_phy
+    generated/la
+    generated/mprj_wb_iena
+    generated/spi_enabled
+    generated/uart_enabled
+    generated/user_irq_0
+    generated/user_irq_1
+    generated/user_irq_2
+    generated/user_irq_3
+    generated/user_irq_4
+    generated/user_irq_5
+    generated/user_irq_ena
+
+
+.. include:: references.rst
 
    
 .. |License| image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
@@ -1187,7 +1196,8 @@ Other Registers
 .. |User CI| image:: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml/badge.svg
    :target: https://github.com/efabless/caravel_project_example/actions/workflows/user_project_ci.yml
 .. |Caravel Build| image:: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.yml/badge.svg
-   :target: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.ymlCTRL
+   :target: https://github.com/efabless/caravel_project_example/actions/workflows/caravel_build.yml
+CTRL
 ----
 
 Register Listing for CTRL
